@@ -1,42 +1,67 @@
 import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom/client';
-import * as actions from './store/actions';
-import { initiateStore } from './store/store';
+import ReactDOM from 'react-dom';
+import {
+	titleChanged,
+	taskDeleted,
+	completeTask,
+	loadTasks,
+	getTasks,
+	getTasksLoadingStatus,
+	createTask,
+} from './store/task';
+import configureStore from './store/store';
+import { Provider } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { getError } from './store/errors';
 
-const store = initiateStore();
+const store = configureStore();
 
 const App = (params) => {
-	const [state, setState] = useState(store.getState());
+	const state = useSelector(getTasks());
+	const isLoading = useSelector(getTasksLoadingStatus());
+	const error = useSelector(getError());
+	const dispatch = useDispatch();
 
 	useEffect(() => {
-		store.subscribe(() => {
-			setState(store.getState());
-		});
+		dispatch(loadTasks());
 	}, []);
 
-	const completeTask = (taskId) => {
-		store.dispatch(actions.taskCompleted(taskId));
-	};
 	const changeTitle = (taskId) => {
-		store.dispatch(actions.titleChanged(taskId));
+		dispatch(titleChanged(taskId));
 	};
 	const deleteTask = (taskId) => {
-		store.dispatch(actions.taskDeleted(taskId));
+		dispatch(taskDeleted(taskId));
 	};
+	// 19. Redux. Часть 2 Задание #1. Добавить задачу
+	const addTask = () => {
+		dispatch(createTask(state));
+	};
+	// 19. Redux. Часть 2 Задание #1. Добавить задачу
+	if (isLoading) {
+		return <h1>Loading</h1>;
+	}
+	if (error) {
+		return <p>{error}</p>;
+	}
 
 	return (
 		<>
-			<h1>App</h1>
+			<h1> App</h1>
 			<ul>
 				{state.map((el) => (
 					<li key={el.id}>
 						<p>{el.title}</p>
-						<p>{`Completed: ${el.completed}`}</p>
-						<button onClick={() => completeTask(el.id)}>Complete</button>
+						<p> {`Completed: ${el.completed}`}</p>
+						<button onClick={() => dispatch(completeTask(el.id))}>
+							Complete
+						</button>
 						<button onClick={() => changeTitle(el.id)}>
 							Change title
 						</button>
-						<button onClick={() => deleteTask(el.id)}>Delete task</button>
+						<button onClick={() => deleteTask(el.id)}>Delete</button>
+						{/* 19. Redux. Часть 2 Задание #1. Добавить задачу */}
+						<button onClick={() => addTask(el.id)}>Add task</button>
+						{/* 19. Redux. Часть 2 Задание #1. Добавить задачу */}
 						<hr />
 					</li>
 				))}
@@ -45,9 +70,11 @@ const App = (params) => {
 	);
 };
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+ReactDOM.render(
 	<React.StrictMode>
-		<App />
-	</React.StrictMode>
+		<Provider store={store}>
+			<App />
+		</Provider>
+	</React.StrictMode>,
+	document.getElementById('root')
 );
